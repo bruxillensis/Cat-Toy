@@ -7,13 +7,14 @@
         "resolution": [640, 480],
         "fps": 16,
         "min_area": 5000,
-        
     }
     'servo':{
+        'theta': 'P1-7',
+        'phi': 'P1-11',
         "theta_min" : 50,
         "theta_max" : 200,
         "phi_min" : 100,
         "phi_max" : 180,
-        "step" : 1
+        "step" : 2
     }
 }
