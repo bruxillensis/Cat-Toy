@@ -1,14 +1,16 @@
 const exec = require('child_process').exec;
 const NumJS = require('numjs');
 const OpenCV = require('opencv');
+const Promise = require('bluebird');
+
+const exec = Promise.promisify(require('child_process').exec);
 
 const Config = require('./Config');
 const Util = require('./Util');
 const Point = require('./Point');
 
-class Servo extends eventEmitter{
-    constructor() {
-        super();
+class Servo {
+    constructor(dispatcher) {
         this.mode = 'static';
         this.theta = Config.servo.theta;
         this.phi = Config.servo.phi;
@@ -28,77 +30,33 @@ class Servo extends eventEmitter{
             theta: [90, 90],
             phi: [90, 90]
         };
-        this.movementQueue = [];
-    }
+        this.dispatcher = dispatcher;
+        this.dispatcher.on('start', (async() => {
+            var position = this.dispatcher.get();
+            while (position) {
+                try {
+                    await this.setPosition(position);
+                    position = this.dispatcher.get();
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }).bind(this));
+    };
+    async initialize() {
+        console.log("Launching Servo Controller");
+        await exec('./servod --step-size=' + this.step + 'us');
+    };
+    async setPosition(position) {
+        await exec("echo " + this.pinDic[this.theta] + "=" + position.x + " > /dev/servoblaster");
+        await exec("echo " + this.pinDic[this.phi] + "=" + position.y + " > /dev/servoblaster");
+        this.position = position;
+        return Promise.resolve(position);
+    };
+    getPosition() {
+        return this.position
+    };
+    center() {
+        return setPosition(new Point((this.bounds.theta[1] - this.bounds.theta[0]) / 2, (this.bounds.phi[1] - this.bounds.phi[0]) / 2));
+    };
 };
-
-Servo.prototype.start = function () {
-    var self = this;
-    console.log("Launching Servo Controller");
-    exec('./servod --step-size=' + this.step + 'us', (error, stdout, stderr) => {
-        if(error){
-            console.error("Error in launching servo controller:");
-            console.error(error);
-        } else self.emit('finished');
-    });
-};
-
-Servo.prototype.getPosition = function () {
-    return this.position
-};
-
-Servo.prototype.setMode = function(mode) {
-    switch(mode){
-        case 'static':
-        case 'bounds':
-            this.movementQueue = [];
-            break;
-        case 'continuous':
-            self.removeAllListeners('finished');
-            break;
-    }
-};
-
-Servo.prototype.center = function () {
-    this.setMode('static');
-    this.append(new Point(90, 90));
-};
-
-Servo.prototype.append = function(movements){
-    if (this.mode == 'static') {
-        this.movementQueue.push(movements);
-        this.emit('_start', {this});
-    } else {
-        var stopped = this.movementQueue.length == 0;
-        if (movements.isArray()) this.movementQueue = movements.reverse().concat(this.movementQueue);
-        else this.movementQueue.unshift(movements);
-        if (stopped) this.emit('_start' {this});
-    }
-};
-
-Servo.prototype.on('_start', (servo) => {
-    servo._set(servo.movementQueue.pop());
-});
-
-Servo.prototype._set = function (position) {
-    var self = this;
-    exec("echo " + self.pinDic[self.theta] + "=" + position.x + " > /dev/servoblaster", () => {
-        exec("echo " + self.pinDic[self.phi] + "=" + position.y + " > /dev/servoblaster", () => {
-            self.position = position;
-            self.emit('_stop', { self });
-        });
-    });
-};
-
-Servo.prototype.on('_stop', (servo) => {
-    if (servo.mode == 'static'){
-        servo.movementQueue = [];
-        servo.emit('finished');
-    } else if (servo.mode == 'bounds'){
-        servo.movementQueue = [];
-        servo.emit('bounds');        
-    } else {
-        if ( this.movementQueue.length != 0 ) this._set(this.movementQueue.pop());
-        else this.emit('finished');
-    }
-});

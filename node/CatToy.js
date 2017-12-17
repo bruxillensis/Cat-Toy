@@ -5,128 +5,112 @@ const OpenCV = require('opencv');
 
 const Config = require('./Config');
 const Servo = require('./Servo');
+const Dispatcher = require('./Dispatcher');
 const CoordinateMap = require('./CoordinateMap');
 
+var readCamera = (emitter, event = 'read') => {
+    return new Promise(((resolve, reject) => {
+        emitter.on(event, (error, timestamp, filename) => {
+            emitter.removeAllListeners(event)
+            if (error) reject(error);
+            else resolve(filename);
+        });
+    }).bind(null, Promise.resolve, Promise.reject));
+};
+var readImage = Promise.promisify(OpenCV.readImage);
+
 class CatToy {
-    constructor(){
-        this.initialize();
-    }
-};
-
-CatToy.prototype.initialize = function(){
-    this.controller = new Controller();
-    this.servo = new Servo();
-    this.imageMap = new CoordinateMap();   
-    this.camera = new PiCamera({
-        'mode': 'photo',
-        'output': '/tmp/cat_toy.jpg',
-        'timeout': 1,
-        'width': Config.camera.resolution[0],
-        'height': Config.camera.resolution[1],
-        'encoding': 'jpg',
-    });
-    var chain = [this.registerMap, this.findBounds, this.servo.center, this.servo.start], self = this;
-    self.servo.setMode('static');
-    self.servo.on('finished', () => {
-        if(chain.length == 0) {
-            self.servo.removeAllListeners('finished');
-            self.play();
-        } else (chain.pop())()
-    });
-    (chain.pop())();
-};
-
-CatToy.prototype.findBounds = function () {
-    var servo = this.servo, camera = this.camera;
-    var points = [];
-    servo.setMode('bounds');
-    servo.on('bounds', camera.start);
-    camera.on('read', (error, timestamp, filename) => {
-        camera.stop();
-        OpenCV.readImage(filename, function(error, image){
-            var point = Util.extractCoordinate(image);
-            if (points.length == 0)
-                points.push(point);
-            else {
-                switch (points.length) {
-                case 1:
-                    if (Point.distance(point, points[0]) > 10) {
-                        points[0] = point;
+    constructor() {
+        this.controller = new Controller();
+        this.servo = new Servo();
+        this.dispatcher = new Dispatcher();
+        this.imageMap = new CoordinateMap();
+        this.camera = new PiCamera({
+            'mode': 'photo',
+            'output': '/tmp/cat_toy.jpg',
+            'timeout': 1,
+            'width': Config.camera.resolution[0],
+            'height': Config.camera.resolution[1],
+            'encoding': 'jpg',
+        });
+    };
+    async initialize() {
+        await this.servo.findBounds();
+        await this.servo.registerMap();
+        return Promise.resolve();
+    };
+    async findBounds() {
+        var servo = this.servo,
+            camera = this.camera,
+            points = [];
+        
+        await servo.center();
+        for(var i = 0; i < 4; i++){
+            let image = await this.getImage();
+            var point = Util.extractLaserCoordinate(image);
+            points.push(point);
+            
+            var first = true;
+            while(Point.distance(point, points[i]) > 10 || first){
+                points[i] = point;
+                switch(i){
+                    case 0:
                         servo.bounds.theta[0] -= servo.step;
-                        servo.append(new Point(servo.bounds.theta[0], servo.getPosition().y));
-                    } else {
-                        points.push(point);
-                        servo.center();
-                    }
-                    break;
-                case 2:
-                    if (Point.distance(point, points[1]) > 10) {
-                        points[1] = point;
+                        await servo.setPosition(new Point(servo.bounds.theta[0], servo.getPosition().y));
+                        break;
+                    case 1:
                         servo.bounds.theta[1] += servo.step;
-                        servo.append(new Point(servo.bounds.theta[1], servo.getPosition().y));
-                    } else {
-                        points.push(point);
-                        servo.center();
-                    }
-                    break;
-                case 3:
-                    if (Point.distance(point, points[2]) > 10) {
-                        points[2] = point;
+                        await servo.setPosition(new Point(servo.bounds.theta[1], servo.getPosition().y));
+                        break;
+                    case 2:
                         servo.bounds.phi[0] -= servo.step;
-                        servo.append(new Point(servo.getPosition().x, servo.bounds.phi[0]));
-                    } else {
-                        points.push(point);
-                        servo.center();
-                    }
-                    break;
-                case 4:
-                    if (Point.distance(point, points[3]) > 10) {
-                        points[3] = point;
+                        await servo.setPosition(new Point(servo.getPosition().x, servo.bounds.phi[0]));
+                        break;
+                    case 3:
                         servo.bounds.phi[1] += servo.step;
-                        servo.append(new Point(servo.getPosition().x, servo.bounds.phi[1]));
-                    } else {
-                        servo.removeAllListeners('bounds');
-                        servo.emit('finished');
-                        camera.removeAllListeners('read');
-                        camera.stop();
-                    }
+                        await servo.setPosition(new Point(servo.getPosition().x, servo.bounds.phi[1]));
                 }
+                let image = await this.getImage();
+                point = Util.extractLaserCoordinate(image);
+                first = false;
             }
-        });
-    });
-    camera.start();
-};
-
-CatToy.prototype.registerMap = function(){
-    var map = this.map, servo = this.servo;
-    servo.setMode('static');
-    servo.on('finished', camera.start);
-    camera.on('read', function (error, timestamp, filename) {
-        camera.stop();
-        if (error) return console.error(error);
-        OpenCV.readImage(filename, function(error, image){
-            if (error) return console.error(error);
-            map.set(Util.extractLaserCoordinate(image), servo.getPosition()));
-        });
-    });
-    for(var i = servo.bounds.theta[0], l = servo.bounds.theta[1]; i <= l; i = i + Config.servo.step){
-        for(var j = servo.bounds.phi[0], m = servo.bounds.phi[1]; j <= m; j = j + Config.servo.step){
-            servo.append(new Point(i, j));
+            await servo.center();
         }
-    }
-};
-
-CatToy.prototype.play = function(){
-    var controller = this.controller,
-        servo = this.servo,
-        camera = this.camera,
-        map = this.imageMap;
-    camera.on('read', function(error, filename){
-        if (error) return console.error(error);
-        OpenCV.readImage(filename, function(error, image){
+    };
+    async registerMap() {
+        for(var i = this.servo.bounds.theta[0], l = this.servo.bounds.theta[1]; i <= l; i++){
+            for(var j = this.servo.bounds.phi[0], m = this.servo.bounds.phi[1]; j <= m; j++){
+                await this.servo.setPosition(new Point(i, j));
+                let image = await this.getImage();
+                this.map.set(Util.extractLaserCoordinate(image), this.servo.getPosition());
+            }
+        }
+    };
+    async getImage(){
+        this.camera.start();
+        let filename = await readCamera(this.camera);
+        this.camera.stop();
+        return readImage(filename);
+    };
+    play() {
+        var controller = this.controller,
+            servo = this.servo,
+            map = this.imageMap,
+            camera = this.camera = new PiCamera({
+                'mode': 'timelapse',
+                'output': '/tmp/cat_toy.jpg',
+                'timelapse': 100,
+                'width': Config.camera.resolution[0],
+                'height': Config.camera.resolution[1],
+                'encoding': 'jpg',
+            });
+        camera.on('read', (error, timestamp, filename) => {
             if (error) return console.error(error);
-            var movements = controller.calculateMove(Util.extractLaserCoordinate(image), Util.extractCatCoordinate(image));
-            servo.append(map.translate(movements), camera.start);
+            OpenCV.readImage(filename, (error, image) => {
+                if (error) return console.error(error);
+                servo.append(map.translate(controller.calculateMove(Util.extractLaserCoordinate(image), Util.extractCatCoordinate(image))));
+            });
         });
-    });
+        camera.start();
+    };
 };
