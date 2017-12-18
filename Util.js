@@ -5,7 +5,8 @@ const Config = require('./Config');
 
 module.exports = {
     extractLaserCoordinate: function(image){
-        var coordinate = (image[:, :, 2] > 250).nonzero();
+        print(image);
+	//var coordinate = (image[:, :, 2] > 250).nonzero();
         return new Point(NumJS.median(NumJS.asarray(coordinate[0])), NumJS.median(NumJS.asarray(coordinate[1])));
     },
     extractCatCoordinate: function(image){

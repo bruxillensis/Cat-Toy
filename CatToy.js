@@ -1,5 +1,6 @@
 const RaspiIO = require('raspi-io');
 const PiCamera = require('raspicam');
+const OpenCV = require('opencv');
 
 const Config = require('./Config');
 const Servo = require('./Servo');
@@ -16,6 +17,7 @@ var readCamera = (emitter, event = 'read') => {
         });
     }).bind(null, Promise.resolve, Promise.reject));
 };
+console.log(Promise.promisify);
 var readImage = Promise.promisify(OpenCV.readImage);
 
 class CatToy {
