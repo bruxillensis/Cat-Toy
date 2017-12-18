@@ -1,4 +1,4 @@
-const Winston = require('winston');
+const logger = require('winston');
 const Commander = require('commander');
 
 Commander
@@ -6,13 +6,10 @@ Commander
     .option('--log-level [level]', 'Log Mode, options: [error, info]', 'info')
     .parse(process.argv);
 
-const logger = Winston.createLogger({
-    'level': Commander.logLevel
-});
+logger.level = Commander.logLevel;
 
-if (Commander.logMode == 'console')
-    logger.add(new Winston.transports.Console());
-else if (Commander.logMode == 'file')
-    logger.add(new Winston.transports.File({ 'filename': 'collector.log' }));
-
+if (Commander.logMode == 'file'){
+    logger.add(logger.transports.File, { 'filename': 'toy.log' });
+    logger.remove(logger.transports.Console);
+}
 module.exports = logger;
