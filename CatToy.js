@@ -17,8 +17,14 @@ var readCamera = (emitter, event = 'read') => {
         });
     }).bind(null, Promise.resolve, Promise.reject));
 };
-console.log(Promise.promisify);
-var readImage = Promise.promisify(OpenCV.readImage);
+var readImage = () => {
+    return new Promise(((resolve, reject) => {
+        OpenCV.readImage((error, matrix) => {
+            if (error) reject(error);
+            else resolve(matrix);
+        }
+    }).bind(null, Promise.resolve, Promise.reject));
+};
 
 class CatToy {
     constructor() {
