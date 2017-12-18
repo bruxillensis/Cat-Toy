@@ -1,6 +1,8 @@
 const RaspiIO = require('raspi-io');
 const PiCamera = require('raspicam');
 const OpenCV = require('opencv');
+const Promise = require('bluebird');
+const EventPromise = require('promisify-event');
 
 const Config = require('./Config');
 const Servo = require('./Servo');
@@ -9,23 +11,7 @@ const CoordinateMap = require('./CoordinateMap');
 const Util = require('./Util');
 const Logger = require('./Logger');
 
-var readCamera = (emitter, event = 'read') => {
-    return new Promise(((resolve, reject) => {
-        emitter.on(event, (error, timestamp, filename) => {
-            emitter.removeAllListeners(event)
-            if (error) reject(error);
-            else resolve(filename);
-        });
-    }).bind(null, Promise.resolve, Promise.reject));
-};
-var readImage = () => {
-    return new Promise(((resolve, reject) => {
-        OpenCV.readImage((error, matrix) => {
-            if (error) reject(error);
-            else resolve(matrix);
-        })
-    }).bind(null, Promise.resolve, Promise.reject));
-};
+var readImage = Promise.promisify(OpenCV.readImage);
 
 class Toy {
     constructor() {
@@ -43,7 +29,6 @@ class Toy {
     };
     async initialize() {
         Logger.info("Initializing Cat Toy");
-        await this.servo.initialize();
         await this.findBounds();
         await this.registerMap();
     };
@@ -55,7 +40,7 @@ class Toy {
         
         await servo.center();
         for(var i = 0; i < 4; i++){
-            Logger.info("Finding " + str(i) + " boundary");
+            Logger.info("Finding " + i + " boundary");
             let image = await this.getImage();
             var point = Util.extractLaserCoordinate(image);
             points.push(point);
@@ -98,9 +83,9 @@ class Toy {
     };
     async getImage(){
         this.camera.start();
-        let filename = await readCamera(this.camera);
-        this.camera.stop();
-        return readImage(filename);
+        let result = await EventPromise(this.camera, 'read');
+	this.camera.stop();
+        return readImage('/tmp/' + result[2]);
     };
     play() {
         var servo = this.servo,

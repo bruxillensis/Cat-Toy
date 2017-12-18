@@ -5,5 +5,7 @@ console.log('--                      Cat Toy                      --');
 console.log('-------------------------------------------------------');
 
 toy = new Toy();
-toy.initialize();
-toy.play();
+(async () => {
+    await toy.initialize();
+    toy.play();
+})();

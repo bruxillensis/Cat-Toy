@@ -7,7 +7,8 @@ const Logger = require('./Logger');
 module.exports = {
     extractLaserCoordinate: function(image){
         Logger.info("Extracting laser coordinate");
-        console.log(image.get(0, 0));
+	image.inRange([0,0,250], [0,0,255]);
+        console.log(image.countNonZero());
 	//var coordinate = (image[:, :, 2] > 250).nonzero();
         return new Point(NumJS.median(NumJS.asarray(coordinate[0])), NumJS.median(NumJS.asarray(coordinate[1])));
     },

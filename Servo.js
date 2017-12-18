@@ -41,10 +41,6 @@ class Servo {
             }
         }).bind(this));
     };
-    async initialize() {
-        Logger.info("Launching Servo Controller");
-        await exec('./servod --step-size=' + this.step + 'us');
-    };
     async setPosition(position) {
         Logger.info("Setting servo position");
         await exec("echo " + this.pinDic[this.theta] + "=" + position.x + " > /dev/servoblaster");
