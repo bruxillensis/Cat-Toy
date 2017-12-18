@@ -1,6 +1,4 @@
 const exec = require('child_process').exec;
-const NumJS = require('numjs');
-const OpenCV = require('opencv');
 const Promise = require('bluebird');
 
 const exec = Promise.promisify(require('child_process').exec);

@@ -1,12 +1,11 @@
 const RaspiIO = require('raspi-io');
 const PiCamera = require('raspicam');
-const NumJS = require('numjs');
-const OpenCV = require('opencv');
 
 const Config = require('./Config');
 const Servo = require('./Servo');
 const Dispatcher = require('./Dispatcher');
 const CoordinateMap = require('./CoordinateMap');
+const Util = require('./Util')
 
 var readCamera = (emitter, event = 'read') => {
     return new Promise(((resolve, reject) => {
