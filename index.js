@@ -1,4 +1,4 @@
-const Toy = require('CatToy')
+const Toy = require('./CatToy')
 
 console.log('-------------------------------------------------------');
 console.log('--                      Cat Toy                      --');

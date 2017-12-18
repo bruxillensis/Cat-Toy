@@ -9,6 +9,7 @@
   "author": "Brett Poulsen",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "numjs": "^0.15.1",
     "opencv": "^6.0.0",
     "raspi-io": "^8.1.0",
