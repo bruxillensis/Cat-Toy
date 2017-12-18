@@ -6,7 +6,8 @@ const Config = require('./Config');
 const Servo = require('./Servo');
 const Dispatcher = require('./Dispatcher');
 const CoordinateMap = require('./CoordinateMap');
-const Util = require('./Util')
+const Util = require('./Util');
+const Logger = require('./Logger');
 
 var readCamera = (emitter, event = 'read') => {
     return new Promise(((resolve, reject) => {
@@ -41,16 +42,20 @@ class Toy {
         });
     };
     async initialize() {
+        Logger.info("Initializing Cat Toy");
+        await this.servo.initialize();
         await this.findBounds();
         await this.registerMap();
     };
     async findBounds() {
+        Logger.info("Finding Boundaries of Autonomous Control")
         var servo = this.servo,
             camera = this.camera,
             points = [];
         
         await servo.center();
         for(var i = 0; i < 4; i++){
+            Logger.info("Finding " + str(i) + " boundary");
             let image = await this.getImage();
             var point = Util.extractLaserCoordinate(image);
             points.push(point);

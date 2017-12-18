@@ -4,6 +4,7 @@ const exec = Promise.promisify(require('child_process').exec);
 const Config = require('./Config');
 const Util = require('./Util');
 const Point = require('./Point');
+const Logger = require('./Logger');
 
 class Servo {
     constructor(dispatcher) {
@@ -28,6 +29,7 @@ class Servo {
         };
         this.dispatcher = dispatcher;
         this.dispatcher.on('start', (async() => {
+            Logger.info("Starting new laser path");
             var position = this.dispatcher.get();
             while (position) {
                 try {
@@ -40,19 +42,22 @@ class Servo {
         }).bind(this));
     };
     async initialize() {
-        console.log("Launching Servo Controller");
+        Logger.info("Launching Servo Controller");
         await exec('./servod --step-size=' + this.step + 'us');
     };
     async setPosition(position) {
+        Logger.info("Setting servo position");
         await exec("echo " + this.pinDic[this.theta] + "=" + position.x + " > /dev/servoblaster");
         await exec("echo " + this.pinDic[this.phi] + "=" + position.y + " > /dev/servoblaster");
         this.position = position;
         return Promise.resolve(position);
     };
     getPosition() {
+        Logger.info("Getting servo position");
         return this.position
     };
     center() {
+        Logger.info("Centering servo");
         return this.setPosition(new Point((this.bounds.theta[1] - this.bounds.theta[0]) / 2, (this.bounds.phi[1] - this.bounds.phi[0]) / 2));
     };
 };
