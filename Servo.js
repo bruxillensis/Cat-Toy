@@ -53,6 +53,7 @@ class Servo {
         return this.position
     };
     center() {
-        return setPosition(new Point((this.bounds.theta[1] - this.bounds.theta[0]) / 2, (this.bounds.phi[1] - this.bounds.phi[0]) / 2));
+        return this.setPosition(new Point((this.bounds.theta[1] - this.bounds.theta[0]) / 2, (this.bounds.phi[1] - this.bounds.phi[0]) / 2));
     };
 };
+module.exports = Servo;

@@ -1,6 +1,6 @@
 const Point = require('./Point');
 
-class CoordianteMap {
+class CoordinateMap {
   constructor() {
     this._x = new Map();
     this._y = new Map();
@@ -20,3 +20,4 @@ class CoordianteMap {
     return this;
   }
 }
+module.exports = CoordinateMap;

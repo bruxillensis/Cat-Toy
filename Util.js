@@ -5,7 +5,7 @@ const Config = require('./Config');
 
 module.exports = {
     extractLaserCoordinate: function(image){
-        print(image);
+        console.log(image.get(0, 0));
 	//var coordinate = (image[:, :, 2] > 250).nonzero();
         return new Point(NumJS.median(NumJS.asarray(coordinate[0])), NumJS.median(NumJS.asarray(coordinate[1])));
     },
@@ -25,5 +25,8 @@ module.exports = {
         let thresh = OpenCV.threshold(frameDelta, Config.camera.delta_thresh, 255, OpenCV.THRESH_BINARY)[1]
         thresh = OpenCV.dilate(thresh, undefined, 2)
         contours = OpenCV.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    },
+    calculateMove: (laser, cat) => {
+        return new Point(100, 100);
     }
 }

@@ -22,15 +22,14 @@ var readImage = () => {
         OpenCV.readImage((error, matrix) => {
             if (error) reject(error);
             else resolve(matrix);
-        }
+        })
     }).bind(null, Promise.resolve, Promise.reject));
 };
 
-class CatToy {
+class Toy {
     constructor() {
-        this.controller = new Controller();
-        this.servo = new Servo();
-        this.dispatcher = new Dispatcher();
+	this.dispatcher = new Dispatcher();
+        this.servo = new Servo(this.dispatcher);
         this.imageMap = new CoordinateMap();
         this.camera = new PiCamera({
             'mode': 'photo',
@@ -42,9 +41,8 @@ class CatToy {
         });
     };
     async initialize() {
-        await this.servo.findBounds();
-        await this.servo.registerMap();
-        return Promise.resolve();
+        await this.findBounds();
+        await this.registerMap();
     };
     async findBounds() {
         var servo = this.servo,
@@ -100,8 +98,7 @@ class CatToy {
         return readImage(filename);
     };
     play() {
-        var controller = this.controller,
-            servo = this.servo,
+        var servo = this.servo,
             map = this.imageMap,
             camera = this.camera = new PiCamera({
                 'mode': 'timelapse',
@@ -115,9 +112,11 @@ class CatToy {
             if (error) return console.error(error);
             OpenCV.readImage(filename, (error, image) => {
                 if (error) return console.error(error);
-                servo.append(map.translate(controller.calculateMove(Util.extractLaserCoordinate(image), Util.extractCatCoordinate(image))));
+                servo.append(map.translate(Util.calculateMove(Util.extractLaserCoordinate(image), Util.extractCatCoordinate(image))));
             });
         });
         camera.start();
     };
 };
+
+module.exports = Toy;
