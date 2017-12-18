@@ -58,10 +58,11 @@ class Toy {
             Logger.info("Finding " + str(i) + " boundary");
             let image = await this.getImage();
             var point = Util.extractLaserCoordinate(image);
+            if (point === null) return Logger.error("Camera not positioned properly!");
             points.push(point);
             
             var first = true;
-            while(Point.distance(point, points[i]) > 10 || first){
+            while(point !== null && (Point.distance(point, points[i]) > 10 || first)){
                 points[i] = point;
                 switch(i){
                     case 0:
@@ -82,6 +83,7 @@ class Toy {
                 }
                 let image = await this.getImage();
                 point = Util.extractLaserCoordinate(image);
+                console.log(point);
                 first = false;
             }
             await servo.center();

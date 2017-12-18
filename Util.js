@@ -7,27 +7,34 @@ const Logger = require('./Logger');
 module.exports = {
     extractLaserCoordinate: function(image){
         Logger.info("Extracting laser coordinate");
-        console.log(image.get(0, 0));
-	//var coordinate = (image[:, :, 2] > 250).nonzero();
-        return new Point(NumJS.median(NumJS.asarray(coordinate[0])), NumJS.median(NumJS.asarray(coordinate[1])));
+        
+        width = image.width()
+        height = image.height()
+        if (width < 1 || height < 1) Logger.error('Image has no size');
+        
+        image.inRange([0, 0, 10], [0, 0, 255]);
+        image.dilate(4);
+        
+        let contours = image.findContours();
+        if (contours.size() < 1) return null;
+        
+        let box = contours.boundingRect(0);
+        return new Point(box.x + box.width/2, box.y + box.height/2);
     },
     extractCatCoordinate: function(image){
         Logger.info("Extracting cat coordinate");
-        let frame = image.array
+        var lowThresh = 0;
+        var highThresh = 100;
 
-        OpenCV.Resize(frame, frame, OpenCV.Size(500, 500), interpolation=CV_INTER_LINEAR)
-        let gray = OpenCV.GaussianBlur(OpenCV.cvtColor(frame, OpenCV.COLOR_BGR2GRAY), (21, 21), 0)
-
-        if (!avg){
-            avg = gray.copy().astype("float")
-            return
-        }
-
-        let frameDelta = OpenCV.absdiff(gray, OpenCV.convertScaleAbs(avg))
-
-        let thresh = OpenCV.threshold(frameDelta, Config.camera.delta_thresh, 255, OpenCV.THRESH_BINARY)[1]
-        thresh = OpenCV.dilate(thresh, undefined, 2)
-        contours = OpenCV.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        width = image.width()
+        height = image.height()
+        if (width < 1 || height < 1) Logger.error('Image has no size');
+        
+        image.convertGrayscale();
+        image.canny(0, 100);
+        image.dilate(2);
+        image.save('./cat_toy.jpg');
+        contours = im_canny.findContours();
     },
     calculateMove: (laser, cat) => {
         Logger.info("Calculating next move");
