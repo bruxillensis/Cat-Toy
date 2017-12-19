@@ -24,8 +24,8 @@ class Servo {
             'P1-22': 7
         }
         this.bounds = {
-            theta: [90, 90],
-            phi: [90, 90]
+            theta: [(Config.servo.max - Config.servo.max)/2, (Config.servo.max - Config.servo.max)/2],
+            phi: [(Config.servo.max - Config.servo.max)/2, (Config.servo.max - Config.servo.max)/2]
         };
         this.dispatcher = dispatcher;
         this.dispatcher.on('start', (async() => {
@@ -40,6 +40,11 @@ class Servo {
                 }
             }
         }).bind(this));
+        
+        (async () => {
+            await exec("sudo killall servod");
+            exec("sudo ./servod --step-size="+Config.servo.step+" --min=500us --max=2500us");
+        })();
     };
     async setPosition(position) {
 	console.log(position.x, position.y);

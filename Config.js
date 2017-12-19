@@ -11,10 +11,8 @@ module.exports = {
     "servo":{
         "theta": "P1-7",
         "phi": "P1-11",
-        "theta_min" : 50,
-        "theta_max" : 200,
-        "phi_min" : 100,
-        "phi_max" : 180,
+        "min" : 250,
+        "max" : 1250,
         "step" : 2
     }
 }
