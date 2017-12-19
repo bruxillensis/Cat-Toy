@@ -11,12 +11,11 @@ module.exports = {
         width = image.width()
         height = image.height()
         if (width < 1 || height < 1) Logger.error('Image has no size');
-        
-        image.inRange([0, 0, 10], [0, 0, 255]);
+        image.inRange([0, 0, 5], [0, 0, 255]);
         image.dilate(4);
-        
+        image.save('/tmp/cat_toy_threshed.jpg');
         let contours = image.findContours();
-        if (contours.size() < 1) return null;
+	if (contours.size() < 1) return null;
         
         let box = contours.boundingRect(0);
         return new Point(box.x + box.width/2, box.y + box.height/2);

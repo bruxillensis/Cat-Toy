@@ -10,6 +10,7 @@ const Dispatcher = require('./Dispatcher');
 const CoordinateMap = require('./CoordinateMap');
 const Util = require('./Util');
 const Logger = require('./Logger');
+const Point = require('./Point');
 
 var readImage = Promise.promisify(OpenCV.readImage);
 
@@ -25,6 +26,7 @@ class Toy {
             'width': Config.camera.resolution[0],
             'height': Config.camera.resolution[1],
             'encoding': 'jpg',
+	    'exposure': 'night'
         });
     };
     async initialize() {
@@ -79,7 +81,7 @@ class Toy {
             for(var j = this.servo.bounds.phi[0], m = this.servo.bounds.phi[1]; j <= m; j++){
                 await this.servo.setPosition(new Point(i, j));
                 let image = await this.getImage();
-                this.map.set(Util.extractLaserCoordinate(image), this.servo.getPosition());
+                this.imageMap.set(Util.extractLaserCoordinate(image), this.servo.getPosition());
             }
         }
     };

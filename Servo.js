@@ -42,6 +42,7 @@ class Servo {
         }).bind(this));
     };
     async setPosition(position) {
+	console.log(position.x, position.y);
         Logger.info("Setting servo position");
         await exec("echo " + this.pinDic[this.theta] + "=" + position.x + " > /dev/servoblaster");
         await exec("echo " + this.pinDic[this.phi] + "=" + position.y + " > /dev/servoblaster");
@@ -54,7 +55,7 @@ class Servo {
     };
     center() {
         Logger.info("Centering servo");
-        return this.setPosition(new Point((this.bounds.theta[1] - this.bounds.theta[0]) / 2, (this.bounds.phi[1] - this.bounds.phi[0]) / 2));
+        return this.setPosition(new Point((this.bounds.theta[1] - this.bounds.theta[0]) / 2 + this.bounds.theta[0], (this.bounds.phi[1] - this.bounds.phi[0]) / 2 + this.bounds.phi[0]));
     };
 };
 module.exports = Servo;
